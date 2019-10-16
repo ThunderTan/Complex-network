@@ -1,0 +1,43 @@
+#第二部分根据算法结果画节目跳转关系图
+library(igraph)
+d<-read.csv('tv6-wcleaderrank1.csv',head=TRUE)
+g<-graph.data.frame(data) #节目名称图
+g<-graph.data.frame(vidx) #节目序号图
+plot(g)
+#根据需求调整并输出节目跳转图
+plot(g,layout=layout.fruchterman.reingold,
+     #layout.fruchterman.reingold表示弹簧式发散的布局
+     #其他还有环形布局layout.circle
+     #分层布局layout.reingold.tilford
+     #中心向外发散layout.reingold.tilford(g,circular=T)，
+     #核心布局layout_as_star，大型网络可视化layout_with_drl
+     edge.width=data$value/30,
+     edge.color=gray(0.5),
+     #edge.color=rainbow(300),
+     edge.arrow.size=0.2,
+     #edge.label=data$value,
+     #vertex.color=gray(0.4),
+     #vertex.color=degree(g),
+     #改变标签大小和标签与节点距离大小
+     #vertex.label.cex=0.7,vertex.label.dist=0.2,
+     #vertex.label.color=gray(0.5),
+     #vertex.label=NA,
+     #按照节点度画节点大小
+     #vertex.size=degree(g)/1.5,
+     #按照节点出度画节点大小
+     #vertex.size=degree(g,mode='in')
+     #按照算法排序结果画节点大小
+     vertex.size=d$得分*7
+     )
+#第三部分获取节目跳转关系的图一些属性
+B=get.adjacency(g)
+#找某个节点的所有的邻居
+neighbors(g,5)
+vcount(g)
+ecount(g)
+degree=degree(g)
+write.csv(degree,'degree.csv')
+degree_in=degree(g,mode='in')
+write.csv(degree_in,'degree_in.csv')
+degree_out=degree(g,mode='out')
+write.csv(degree_out,'degree_out.csv')

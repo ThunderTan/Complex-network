@@ -1,0 +1,125 @@
+第一部分
+import os
+os.chdir('e:/pynote')
+import pandas as pd
+df=pd.read_csv('day3.csv')
+#判断数据集中的是否有重复行并求和
+sum(df.duplicated())
+#删除存在缺失值的行
+df=df.dropna(axis=0)
+#判断数据集中是否存在缺失值
+df.isnull().sum().any()
+#更改数据类型
+df['uid']=df['uid'].astype(object)
+df['date']=df['date'].astype(object)
+#df['tqid']=df['tqid'].astype(object)
+df['sskst']=df['sskst'].astype(int)
+df['pdid']=df['pdid'].astype(object)
+df['jmid']=df['jmid'].astype(object)
+df['jmkst']=df['jmkst'].astype(int)
+df['jmjst']=df['jmjst'].astype(int)
+#按要求筛选数据——收视时长大于1分钟的黄金时段
+tv1=df[df['Jmlx']=='电视剧类']
+tv2=tv1[tv1['sssc']/60>=1]
+tv3=tv2[tv2['jmkst']>=183000]
+tv4=tv3[tv3['jmjst']<=220000]
+tv4.to_csv('data.csv',index=False)
+tv4.info()
+
+第二部分
+#按要求筛选数据——节目时长大于10分钟
+raw_data = pd.read_csv('data.csv')
+jmjst = raw_data["jmjst"]
+jmkst = raw_data["jmkst"]
+newlist1 = []
+newlist2 = []
+for i in range(len(jmjst)):
+    ss = str(jmjst[i])
+    res = int(ss[-6:-4])*60+int(ss[-4:-2])+int(ss[-2:])/60
+    newlist1.append(res)
+for j in range(len(jmkst)):
+    ssk = str(jmkst[j])
+    resk = int(ssk[-6:-4])*60+int(ssk[-4:-2])+int(ssk[-2:])/60
+    newlist2.append(resk) 
+##del raw_data["jmjst"]
+raw_data["jmjsc"] = pd.Series(newlist1)
+##del raw_data["jmkst"]
+raw_data["jmksc"] = pd.Series(newlist2)
+raw_data["jmsc"] = raw_data["jmjsc"]-raw_data["jmksc"]
+raw_data['sssc'] = raw_data['sssc']/60
+tv5 = raw_data[raw_data['jmsc']>=10]
+import xlrd
+from xlrd import xldate_as_tuple
+tv5.to_excel('deal3.xlsx',index=False)
+tv5.info()
+
+第三部分
+df=pd.read_excel('deal3.xlsx')
+# 建立边信息表单
+writer = pd.ExcelWriter('deal3.xlsx')
+edge_ch = pd.DataFrame()
+df.to_excel(excel_writer=writer,sheet_name='Sheet1')
+# -------------------------------统计行为信息-----------------------------------
+n = 0
+df['ID_E'] = df.index
+df['CH_F'] = '空'
+df['CH_T'] = '空'
+
+for i in range(len(df)):
+    if i == len(df) - 1:
+        break
+    if df['uid'].at[i] == df['uid'].at[i+1]:                  #判断行为是否为同一用户
+        #if df['date'].at[i] == df['date'].at[i+1]:          #判断行为是否同一天发生
+            if df['pdname'].at[i] == df['pdname'].at[i+1]:        # 是否观看同一频道
+                if df['sskst'].at[i] == df['sskst'].at[i+1]:    # 是否持续关注同一个频道
+                    if df['jmname'].at[i] == df['jmname'].at[i+1]:    # 是否持续收看同一个节目
+                        print('坚持收看%s的%s'%(df['pdname'].at[i],df['jmname'].at[i]))
+                    else:
+                        print('坚持收看%s的%s与%s'%(df['pdname'].at[i],df['jmname'].at[i],df['jmname'].at[i+1]))
+                else:
+                    if df['jmname'].at[i] == df['jmname'].at[i+1]:
+                        print('断续收看%s的%s' % (df['pdname'].at[i], df['jmname'].at[i]))
+                    else:
+                        print('断续收看%s的%s与%s'%(df['pdname'].at[i],df['jmname'].at[i],df['jmname'].at[i+1]))
+            else:
+                print(df['jmname'].at[i],df['jmname'].at[i+1]) #此处节目名称可修改为频道名称输出频道跳转情况
+                df['ID_E'].at[n] = df['uid'].at[i]
+                df['CH_F'].at[n] = df['jmname'].at[i] #此处节目名称可修改为频道名称输出频道跳转情况
+                df['CH_T'].at[n] = df['jmname'].at[i+1] #此处节目名称可修改为频道名称输出频道跳转情况
+                n += 1
+        #else:
+            #print('---next day---')
+    else:
+        print('------ next ID ----')
+
+edge_ch['ID'] = pd.Series(df.ID_E)
+edge_ch['CH_F'] = pd.Series(df.CH_F)
+edge_ch['CH_T'] = pd.Series(df.CH_T)
+
+第四部分
+# ----------------------------------计算权重------------------------------------
+edge_ch_out = pd.DataFrame()
+edge_ch_in = pd.DataFrame()
+edge_ch_w = pd.DataFrame()
+edge_ch_ws = pd.DataFrame()
+
+edge_ch_out = edge_ch["CH_F"].value_counts()
+edge_ch_in = edge_ch["CH_T"].value_counts()
+edge_ch_w = edge_ch.groupby(by=["CH_F",'CH_T']).size()
+
+第五部分
+edge_ch_ws = edge_ch.groupby(by=["CH_F",'CH_T'], as_index=False).aggregate(sum)
+edge_ch.to_excel(excel_writer=writer,sheet_name='edge_ch0')
+edge_ch_out.to_excel(excel_writer=writer,sheet_name='edge_ch_out0')
+edge_ch_in.to_excel(excel_writer=writer,sheet_name='edge_ch_in0')
+edge_ch_w.to_excel(excel_writer=writer,sheet_name='edge_ch_w0')
+edge_ch_ws.to_excel(excel_writer=writer,sheet_name='edge_ch_ws0')
+
+writer.close()
+
+第六部分
+# 处理 edge_ch_w['CH_F']
+edge_ch_wss = pd.read_excel('deal3.xlsx',sheet_name='edge_ch_w0')
+edge_ch_ws = pd.read_excel('deal3.xlsx',sheet_name='edge_ch_ws0')
+edge_ch_wss['CH_F'] = edge_ch_ws['CH_F']
+edge_ch_wss.to_excel('out-deal3.xlsx',index=False)

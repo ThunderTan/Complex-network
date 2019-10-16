@@ -1,0 +1,57 @@
+setwd('d:/rdata/rcode')
+library(Matrix)
+data<-read.csv('tv6.csv', head=TRUE)
+names(data) <- c('from', 'to','value')
+fid <- unique(data$from)
+tid <- unique(data$to)
+vid <- (data$value)
+#确定节点集并排序
+uid <- sort(union(fid, tid))
+#建立一个length(uid)*length(uid)的邻接矩阵
+A <- Matrix(data=0, nrow=length(uid), ncol=length(uid))
+fidx <- match(data[[1]], uid, nomatch=0)
+tidx <- match(data[[2]], uid, nomatch=0)
+idx <- matrix(c(fidx, tidx), ncol=2)#生成length(uid)行2列的矩阵
+A[idx] <- vid
+A
+uid
+
+#以下是leaderrank算法
+N <- nrow(A)
+#根据邻接矩阵A生成概率转移矩阵M
+K <- Diagonal(x=1/rowSums(A))
+M <- t(K %*% A)
+d <- 0.85
+C <- matrix((1-d)/N, nrow=N, ncol=1)
+#给N个节点赋予初值
+R0 <- matrix(1/N, nrow=N, ncol=1)
+#给定收敛停止精度和最大迭代次
+EPS <- 0.0001
+MAXITER <- 100
+#执行循环得到收敛的最终的R值
+for(i in 1:MAXITER){
+  R <- d * M %*% R0 + C
+  e <- sum(abs(R-R0))
+  cat(paste('iteration', i, 'error', e), '\n')
+  if(e < EPS) break
+  R0 <- R
+  }
+R <- as.vector(R)
+R
+
+#标准化最后的pagerank得分，使其得分区间为[0.10]
+lt=0
+ht=10
+MIN_NUM <- 0.0000001
+if(min(R) == 0) R <- R+MIN_NUM
+R1 <- log(R)
+min_r <- min(R1)
+max_r <- max(R1)
+R2 <- (ht-lt)*(R1 - min_r)/(max_r-min_r) + lt
+R2
+
+#输出得分排名
+ix <- sort(R2, index.return=TRUE, decreasing=TRUE)$ix
+out <- paste(seq(1, length(uid)), uid[ix], sprintf('%.4f', R2[ix]), sep=',')
+out
+write.csv(out,'tv6-wpagerank.csv',row.names=FALSE)

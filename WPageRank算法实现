@@ -16,7 +16,7 @@ A[idx] <- vid
 A
 uid
 
-#以下是leaderrank算法
+#以下是wpagerank算法
 N <- nrow(A)
 #根据邻接矩阵A生成概率转移矩阵M
 K <- Diagonal(x=1/rowSums(A))
@@ -39,7 +39,7 @@ for(i in 1:MAXITER){
 R <- as.vector(R)
 R
 
-#标准化最后的pagerank得分，使其得分区间为[0.10]
+#标准化最后的wpagerank得分，使其得分区间为[0.10]
 lt=0
 ht=10
 MIN_NUM <- 0.0000001

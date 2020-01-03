@@ -16,7 +16,7 @@ A[idx] <- 1
 A
 uid
 
-#以下是leaderrank算法
+#以下是pagerank算法
 N <- nrow(A)
 #根据邻接矩阵A生成概率转移矩阵M
 K <- Diagonal(x=1/rowSums(A))
